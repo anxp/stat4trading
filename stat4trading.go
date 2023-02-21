@@ -3,7 +3,7 @@ package stat4trading
 import "errors"
 
 type Numeric interface {
-	int64 | float64 | int32 | float32
+	int64 | float64 | int32 | float32 | int
 }
 
 // SMA - SimpleMovingAverage
