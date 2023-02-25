@@ -34,11 +34,11 @@ func SMA(inputData []float64, windowWidth int, expectedOutputDataLength int) ([]
 	outputDataLength := CalculateOutputDataLengthAfterMA(len(inputData), windowWidth)
 
 	if outputDataLength <= 0 {
-		return nil, errors.New("not enough data to calculate SMA of specified window width, increase data set or reduce window width")
+		return nil, errors.New("stat4trading::SMA: not enough data to calculate SMA of specified window width, increase data set or reduce window width")
 	}
 
 	if expectedOutputDataLength != outputDataLength {
-		return nil, errors.New("incorrectly calculated expected output data length")
+		return nil, errors.New("stat4trading::SMA: incorrectly calculated expected output data length")
 	}
 
 	processedData := make([]float64, outputDataLength)
@@ -65,11 +65,11 @@ func WMA(inputData []float64, windowWidth int, expectedOutputDataLength int) ([]
 	outputDataLength := CalculateOutputDataLengthAfterMA(len(inputData), windowWidth)
 
 	if outputDataLength <= 0 {
-		return nil, errors.New("not enough data to calculate WMA of specified window width, increase data set or reduce window width")
+		return nil, errors.New("stat4trading::WMA: not enough data to calculate WMA of specified window width, increase data set or reduce window width")
 	}
 
 	if expectedOutputDataLength != outputDataLength {
-		return nil, errors.New("incorrectly calculated expected output data length")
+		return nil, errors.New("stat4trading::WMA: incorrectly calculated expected output data length")
 	}
 
 	processedData := make([]float64, outputDataLength)
@@ -103,16 +103,16 @@ func EMA(inputData []float64, windowWidth int, expectedOutputDataLength int) ([]
 	outputDataLength := CalculateOutputDataLengthAfterMA(len(inputData), windowWidth)
 
 	if outputDataLength <= 0 {
-		return nil, errors.New("not enough data to calculate EMA of specified window width, increase data set or reduce window width")
+		return nil, errors.New("stat4trading::EMA: not enough data to calculate EMA of specified window width, increase data set or reduce window width")
 	}
 
 	if expectedOutputDataLength != outputDataLength {
-		return nil, errors.New("incorrectly calculated expected output data length")
+		return nil, errors.New("stat4trading::EMA: incorrectly calculated expected output data length")
 	}
 
 	ema := make([]float64, len(inputData))
 	ema[0] = inputData[0]
-	alpha := float64(2 / (1 + windowWidth))
+	alpha := float64(2) / float64(1 + windowWidth)
 
 	for i := 1; i < len(inputData); i++ {
 		ema[i] = alpha*inputData[i] + (1-alpha)*ema[i-1]
@@ -121,7 +121,7 @@ func EMA(inputData []float64, windowWidth int, expectedOutputDataLength int) ([]
 	result := ema[windowWidth-1:]
 
 	if len(result) != outputDataLength {
-		return nil, errors.New("self-control failed: incorrectly calculated expected output data length")
+		return nil, errors.New("stat4trading::EMA: self-control failed: incorrectly calculated expected output data length")
 	}
 
 	return result, nil
@@ -129,7 +129,7 @@ func EMA(inputData []float64, windowWidth int, expectedOutputDataLength int) ([]
 
 func Subtract(initialData []float64, deductibleData []float64) ([]float64, error) {
 	if len(initialData) != len(deductibleData) {
-		return nil, errors.New("both input data sets should be the same length")
+		return nil, errors.New("stat4trading::Subtract: both input data sets should be the same length")
 	}
 
 	result := make([]float64, len(initialData))
@@ -143,7 +143,7 @@ func Subtract(initialData []float64, deductibleData []float64) ([]float64, error
 
 func FindIntersectionDirections(referenceGraph []float64, investigatedGraph []float64) ([]string, error) {
 	if len(referenceGraph) != len(investigatedGraph) {
-		return nil, errors.New("both input data sets should be the same length")
+		return nil, errors.New("stat4trading::FindIntersectionDirections: both input data sets should be the same length")
 	}
 
 	result := make([]string, len(referenceGraph))
@@ -162,11 +162,15 @@ func FindIntersectionDirections(referenceGraph []float64, investigatedGraph []fl
 	return result, nil
 }
 
-// FindIntersectionPointOfTwoLines - tries to solve a system of two linear equations and returns 3 parameters:
-// - Coordinates of intersection point if they are exist
-// - Boolean indicating if solution exists, or it does not (for example, solution does not exist if two lines are parallel ||)
-// - Error in other abnormal situation.
-func FindIntersectionPointOfTwoLines(lineA LineDefinedByTwoPoints, lineB LineDefinedByTwoPoints) (PointCoordinates, bool, error) {
+// FindIntersectionPointOfTwoSegments - tries to solve a system of two linear equations and returns 3 parameters:
+// 1. Coordinates of intersection point if they are exist
+// 2. Boolean indicating if solution exists, or it does not
+//		for example, solution does not exist if:
+//		a) two lines are parallel,
+//		b) if intersection point exists, but it is outside of the common projection
+// 3. Error in other abnormal situation.
+// PLEASE NOTE: This function searches intersection of SEGMENTS, NOT LINES!!!
+func FindIntersectionPointOfTwoSegments(lineA LineDefinedByTwoPoints, lineB LineDefinedByTwoPoints) (PointCoordinates, bool, error) {
 	// lineA: y = kx+b
 	// lineB: y = mx+c
 
@@ -174,7 +178,7 @@ func FindIntersectionPointOfTwoLines(lineA LineDefinedByTwoPoints, lineB LineDef
 	deltaXB := lineB.PointB.X - lineB.PointA.X
 
 	if deltaXA <= 1e-9 || deltaXB <= 1e-9 {
-		return PointCoordinates{}, false, errors.New("error: deltaX = x2-x1 = 0, while it should not be so. There is an error in input data")
+		return PointCoordinates{}, false, errors.New("stat4trading::FindIntersectionPointOfTwoLines error: deltaX = x2-x1 = 0, while it should not be so. There is an error in input data")
 	}
 
 	k := (lineA.PointB.Y - lineA.PointA.Y) / deltaXA
@@ -199,12 +203,21 @@ func FindIntersectionPointOfTwoLines(lineA LineDefinedByTwoPoints, lineB LineDef
 		panic("Self-control failed: Error in linear equation solving logic!")
 	}
 
-	return PointCoordinates{X: x, Y: y1}, true, nil
+	// We found that LINES are intersect, now let's check if SEGMENTS are intersect!
+	commonProjectionStartX, _ := FindMax([]float64{lineA.PointA.X, lineB.PointA.X})
+	commonProjectionEndX, _ := FindMin([]float64{lineA.PointB.X, lineB.PointB.X})
+
+	// Common projection is FROM commonProjectionStartX TO commonProjectionEndX, not vise versa!
+	if commonProjectionStartX <= x && x <= commonProjectionEndX {
+		return PointCoordinates{X: x, Y: y1}, true, nil
+	}
+
+	return PointCoordinates{}, false, nil
 }
 
 func FindMax[N Numeric](dataSet []N) (N, error) {
 	if len(dataSet) == 0 {
-		return 0, errors.New("Input data set cannot be empty!")
+		return 0, errors.New("stat4trading::FindMax: Input data set cannot be empty!")
 	}
 
 	maxValue := dataSet[0]
@@ -220,7 +233,7 @@ func FindMax[N Numeric](dataSet []N) (N, error) {
 
 func FindMin[N Numeric](dataSet []N) (N, error) {
 	if len(dataSet) == 0 {
-		return 0, errors.New("Input data set cannot be empty!")
+		return 0, errors.New("stat4trading::FindMin: Input data set cannot be empty!")
 	}
 
 	minValue := dataSet[0]
