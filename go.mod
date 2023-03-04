@@ -1,3 +1,3 @@
-module stat4trading
+module github.com/anxp/stat4trading
 
 go 1.19
