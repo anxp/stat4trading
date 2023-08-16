@@ -20,6 +20,11 @@ type LineDefinedByTwoPoints struct {
 	PointB PointCoordinates
 }
 
+type LineDefinedByParameters struct {
+	ParamA float64
+	ParamB float64
+}
+
 // CalculateOutputDataLengthAfterMA
 // Calculates output data length after applying Moving Average window with width = windowWidth
 // to incoming data set with length = inputDataLength
@@ -112,7 +117,7 @@ func EMA(inputData []float64, windowWidth int, expectedOutputDataLength int) ([]
 
 	ema := make([]float64, len(inputData))
 	ema[0] = inputData[0]
-	alpha := float64(2) / float64(1 + windowWidth)
+	alpha := float64(2) / float64(1+windowWidth)
 
 	for i := 1; i < len(inputData); i++ {
 		ema[i] = alpha*inputData[i] + (1-alpha)*ema[i-1]
@@ -163,12 +168,13 @@ func FindIntersectionDirections(referenceGraph []float64, investigatedGraph []fl
 }
 
 // FindIntersectionPointOfTwoSegments - tries to solve a system of two linear equations and returns 3 parameters:
-// 1. Coordinates of intersection point if they are exist
-// 2. Boolean indicating if solution exists, or it does not
-//		for example, solution does not exist if:
-//		a) two lines are parallel,
-//		b) if intersection point exists, but it is outside of the common projection
-// 3. Error in other abnormal situation.
+//  1. Coordinates of intersection point if they are exist
+//  2. Boolean indicating if solution exists, or it does not
+//     for example, solution does not exist if:
+//     a) two lines are parallel,
+//     b) if intersection point exists, but it is outside of the common projection
+//  3. Error in other abnormal situation.
+//
 // PLEASE NOTE: This function searches intersection of SEGMENTS, NOT LINES!!!
 func FindIntersectionPointOfTwoSegments(lineA LineDefinedByTwoPoints, lineB LineDefinedByTwoPoints) (PointCoordinates, bool, error) {
 	// lineA: y = kx+b
@@ -215,6 +221,42 @@ func FindIntersectionPointOfTwoSegments(lineA LineDefinedByTwoPoints, lineB Line
 	return PointCoordinates{}, false, nil
 }
 
+func FindEquationOfLineGivenByTwoPoints(lineByTwoPoints LineDefinedByTwoPoints) (LineDefinedByParameters, error) {
+	// We solve system of 2 equations:
+	// ax1 + b = y1
+	// ax2 + b = y2
+	// We should find parameters a and b, so we'll know the equation of line
+
+	// Main Determinant:
+	// x1 1
+	// x2 1
+
+	// Determinant A:
+	// y1 1
+	// y2 1
+
+	// Determinant B:
+	// x1 y1
+	// x2 y2
+
+	// a = DetA/MainDet
+	// b = DetB/MainDet
+
+	detMain := lineByTwoPoints.PointA.X - lineByTwoPoints.PointB.X
+
+	if isAlmostEqual(detMain, 0.0) {
+		return LineDefinedByParameters{}, errors.New("x1 and x2 are the same. Unable to unambiguously define a line")
+	}
+
+	detA := lineByTwoPoints.PointA.Y - lineByTwoPoints.PointB.Y
+	detB := lineByTwoPoints.PointA.X*lineByTwoPoints.PointB.Y - lineByTwoPoints.PointA.Y*lineByTwoPoints.PointB.X
+
+	a := detA / detMain
+	b := detB / detMain
+
+	return LineDefinedByParameters{ParamA: a, ParamB: b}, nil
+}
+
 func FindMax[N Numeric](dataSet []N) (N, error) {
 	if len(dataSet) == 0 {
 		return 0, errors.New("stat4trading::FindMax: Input data set cannot be empty!")
@@ -245,4 +287,14 @@ func FindMin[N Numeric](dataSet []N) (N, error) {
 	}
 
 	return minValue, nil
+}
+
+func isAlmostEqual(v1 float64, v2 float64) bool {
+	const float64EqualityThreshold = 1e-9
+
+	if math.Abs(v1-v2) <= float64EqualityThreshold {
+		return true
+	}
+
+	return false
 }
