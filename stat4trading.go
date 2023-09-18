@@ -210,8 +210,8 @@ func FindIntersectionPointOfTwoSegments(lineA LineDefinedByTwoPoints, lineB Line
 	}
 
 	// We found that LINES are intersect, now let's check if SEGMENTS are intersect!
-	commonProjectionStartX, _ := FindMax([]float64{lineA.PointA.X, lineB.PointA.X})
-	commonProjectionEndX, _ := FindMin([]float64{lineA.PointB.X, lineB.PointB.X})
+	commonProjectionStartX, _, _ := FindMax([]float64{lineA.PointA.X, lineB.PointA.X})
+	commonProjectionEndX, _, _ := FindMin([]float64{lineA.PointB.X, lineB.PointB.X})
 
 	// Common projection is FROM commonProjectionStartX TO commonProjectionEndX, not vise versa!
 	if commonProjectionStartX <= x && x <= commonProjectionEndX {
@@ -346,36 +346,40 @@ func SmoothAdaptive(inData []float64, passesNum int, keepLastValueOriginal bool)
 	return smoothedBy5Points
 }
 
-func FindMax[N Numeric](dataSet []N) (N, error) {
+func FindMax[N Numeric](dataSet []N) (N, int, error) {
 	if len(dataSet) == 0 {
-		return 0, errors.New("stat4trading::FindMax: Input data set cannot be empty!")
+		return 0, 0, errors.New("stat4trading::FindMax: Input data set cannot be empty!")
 	}
 
 	maxValue := dataSet[0]
+	index := 0
 
 	for i := 1; i < len(dataSet); i++ {
 		if dataSet[i] > maxValue {
 			maxValue = dataSet[i]
+			index = i
 		}
 	}
 
-	return maxValue, nil
+	return maxValue, index, nil
 }
 
-func FindMin[N Numeric](dataSet []N) (N, error) {
+func FindMin[N Numeric](dataSet []N) (N, int, error) {
 	if len(dataSet) == 0 {
-		return 0, errors.New("stat4trading::FindMin: Input data set cannot be empty!")
+		return 0, 0, errors.New("stat4trading::FindMin: Input data set cannot be empty!")
 	}
 
 	minValue := dataSet[0]
+	index := 0
 
 	for i := 1; i < len(dataSet); i++ {
 		if dataSet[i] < minValue {
 			minValue = dataSet[i]
+			index = i
 		}
 	}
 
-	return minValue, nil
+	return minValue, index, nil
 }
 
 func isAlmostEqual(v1 float64, v2 float64) bool {
