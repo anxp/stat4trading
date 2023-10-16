@@ -346,17 +346,17 @@ func SmoothAdaptive(inData []float64, passesNum int, keepLastValueOriginal bool)
 	return smoothedBy5Points
 }
 
-func FindMax[N Numeric](dataSet []N) (N, int, error) {
-	if len(dataSet) == 0 {
+func FindMax[N Numeric](data []N) (N, int, error) {
+	if len(data) == 0 {
 		return 0, 0, errors.New("stat4trading::FindMax: Input data set cannot be empty!")
 	}
 
-	maxValue := dataSet[0]
+	maxValue := data[0]
 	index := 0
 
-	for i := 1; i < len(dataSet); i++ {
-		if dataSet[i] > maxValue {
-			maxValue = dataSet[i]
+	for i := 1; i < len(data); i++ {
+		if data[i] > maxValue {
+			maxValue = data[i]
 			index = i
 		}
 	}
@@ -364,22 +364,42 @@ func FindMax[N Numeric](dataSet []N) (N, int, error) {
 	return maxValue, index, nil
 }
 
-func FindMin[N Numeric](dataSet []N) (N, int, error) {
-	if len(dataSet) == 0 {
+func FindMin[N Numeric](data []N) (N, int, error) {
+	if len(data) == 0 {
 		return 0, 0, errors.New("stat4trading::FindMin: Input data set cannot be empty!")
 	}
 
-	minValue := dataSet[0]
+	minValue := data[0]
 	index := 0
 
-	for i := 1; i < len(dataSet); i++ {
-		if dataSet[i] < minValue {
-			minValue = dataSet[i]
+	for i := 1; i < len(data); i++ {
+		if data[i] < minValue {
+			minValue = data[i]
 			index = i
 		}
 	}
 
 	return minValue, index, nil
+}
+
+func IsDataSortedASC[N Numeric](data []N) bool {
+	for i := 1; i < len(data); i++ {
+		if data[i] <= data[i-1] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func IsDataSortedDESC[N Numeric](data []N) bool {
+	for i := 1; i < len(data); i++ {
+		if data[i] >= data[i-1] {
+			return false
+		}
+	}
+
+	return true
 }
 
 func isAlmostEqual(v1 float64, v2 float64) bool {
