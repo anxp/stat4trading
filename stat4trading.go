@@ -257,13 +257,9 @@ func FindEquationOfLineGivenByTwoPoints(lineByTwoPoints LineDefinedByTwoPoints) 
 	return LineDefinedByParameters{ParamA: a, ParamB: b}, nil
 }
 
-func SmoothBy3Points(inData []float64, passesNum int, keepLastValueOriginal bool) ([]float64, error) {
-	if passesNum <= 0 {
-		return inData, nil
-	}
-
-	if len(inData) < 3 {
-		return []float64{}, errors.New("not enough points for 3-points smoothing, min 3 required")
+func SmoothBy3Points(inData []float64, passesNum int) []float64 {
+	if passesNum <= 0 || len(inData) < 3 {
+		return inData
 	}
 
 	startIterationIndex := 1
@@ -278,26 +274,17 @@ func SmoothBy3Points(inData []float64, passesNum int, keepLastValueOriginal bool
 		}
 
 		smoothedData[0] = (5*inData[0] + 2*inData[1] - inData[2]) / 6
-
-		if keepLastValueOriginal {
-			smoothedData[lastIndex] = inData[lastIndex]
-		} else {
-			smoothedData[lastIndex] = (-inData[lastIndex-2] + 2*inData[lastIndex-1] + 5*inData[lastIndex]) / 6
-		}
+		smoothedData[lastIndex] = (-inData[lastIndex-2] + 2*inData[lastIndex-1] + 5*inData[lastIndex]) / 6
 
 		inData = smoothedData
 	}
 
-	return smoothedData, nil
+	return smoothedData
 }
 
-func SmoothBy5Points(inData []float64, passesNum int, keepLastValueOriginal bool) ([]float64, error) {
-	if passesNum <= 0 {
-		return inData, nil
-	}
-
-	if len(inData) < 5 {
-		return []float64{}, errors.New("not enough points for 5-points smoothing, min 5 required")
+func SmoothBy5Points(inData []float64, passesNum int) []float64 {
+	if passesNum <= 0 || len(inData) < 5 {
+		return inData
 	}
 
 	startIterationIndex := 2
@@ -314,36 +301,28 @@ func SmoothBy5Points(inData []float64, passesNum int, keepLastValueOriginal bool
 		smoothedData[0] = (3*inData[0] + 2*inData[1] + inData[2] - inData[4]) / 5
 		smoothedData[1] = (4*inData[0] + 3*inData[1] + 2*inData[2] + inData[3]) / 10
 		smoothedData[lastIndex-1] = (inData[lastIndex-3] + 2*inData[lastIndex-2] + 3*inData[lastIndex-1] + 4*inData[lastIndex]) / 10
-
-		if keepLastValueOriginal {
-			smoothedData[lastIndex] = inData[lastIndex]
-		} else {
-			smoothedData[lastIndex] = (-inData[lastIndex-4] + inData[lastIndex-2] + 2*inData[lastIndex-1] + 3*inData[lastIndex]) / 5
-		}
+		smoothedData[lastIndex] = (-inData[lastIndex-4] + inData[lastIndex-2] + 2*inData[lastIndex-1] + 3*inData[lastIndex]) / 5
 
 		inData = smoothedData
 	}
 
-	return smoothedData, nil
+	return smoothedData
 }
 
 // SmoothAdaptive performs adaptive smoothing:
 // 5-point smoothing in priority,
 // but if there are not enough points for 5-point smoothing, it does 3-point smoothing,
 // and if there are not enough points even for 3-p smoothing, it just returns the input
-func SmoothAdaptive(inData []float64, passesNum int, keepLastValueOriginal bool) []float64 {
+func SmoothAdaptive(inData []float64, passesNum int) []float64 {
 	if len(inData) < 3 {
 		return inData
 	}
 
 	if len(inData) < 5 {
-		smoothedBy3Points, _ := SmoothBy3Points(inData, passesNum, keepLastValueOriginal)
-		return smoothedBy3Points
+		return SmoothBy3Points(inData, passesNum)
 	}
 
-	smoothedBy5Points, _ := SmoothBy5Points(inData, passesNum, keepLastValueOriginal)
-
-	return smoothedBy5Points
+	return SmoothBy5Points(inData, passesNum)
 }
 
 func FindMax[N Numeric](data []N) (N, int, error) {
