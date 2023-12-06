@@ -276,7 +276,7 @@ func SmoothBy3Points(inData []float64, passesNum int) []float64 {
 		smoothedData[0] = (5*inData[0] + 2*inData[1] - inData[2]) / 6
 		smoothedData[lastIndex] = (-inData[lastIndex-2] + 2*inData[lastIndex-1] + 5*inData[lastIndex]) / 6
 
-		inData = smoothedData
+		copy(inData, smoothedData)
 	}
 
 	return smoothedData
@@ -303,7 +303,7 @@ func SmoothBy5Points(inData []float64, passesNum int) []float64 {
 		smoothedData[lastIndex-1] = (inData[lastIndex-3] + 2*inData[lastIndex-2] + 3*inData[lastIndex-1] + 4*inData[lastIndex]) / 10
 		smoothedData[lastIndex] = (-inData[lastIndex-4] + inData[lastIndex-2] + 2*inData[lastIndex-1] + 3*inData[lastIndex]) / 5
 
-		inData = smoothedData
+		copy(inData, smoothedData)
 	}
 
 	return smoothedData
